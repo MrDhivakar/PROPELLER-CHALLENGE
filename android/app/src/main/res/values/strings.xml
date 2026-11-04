@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Propeller Challenge</string>
+    <string name="map_style_url">https://tiles.openfreemap.org/styles/liberty</string>
 </resources>
