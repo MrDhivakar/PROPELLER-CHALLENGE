@@ -8,8 +8,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "provision-admin": "node scripts/provision-admin.js",
-    "check:env": "node -e \"import('./src/config/env.js').then(()=>console.log('env OK')).catch(e=>{console.error(e);process.exit(1)})\""
+    "provision-admin": "node scripts/provision-admin.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
