@@ -19,4 +19,4 @@ SafetyReportSchema.index({ status: 1, createdAt: -1 });
 SafetyReportSchema.index({ taskId: 1, status: 1 });
 
 export const SafetyReport = mongoose.model('SafetyReport', SafetyReportSchema);
-export const REPORT_REASONS = REPORT_REASONS;
+export { REPORT_REASONS };
