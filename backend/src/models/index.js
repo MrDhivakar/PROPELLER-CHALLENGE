@@ -9,3 +9,7 @@ export { SafetyReport, REPORT_REASONS } from './SafetyReport.js';
 export { BlockedUser, BLOCK_REASONS } from './BlockedUser.js';
 export { AdminActivityLog } from './AdminActivityLog.js';
 export { RefreshToken } from './RefreshToken.js';
+export { Card } from './Card.js';
+export { UserCard } from './UserCard.js';
+export { LocationGame } from './LocationGame.js';
+export { GameParticipant } from './GameParticipant.js';
