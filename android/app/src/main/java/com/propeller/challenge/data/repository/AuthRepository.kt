@@ -6,15 +6,8 @@ import com.propeller.challenge.data.remote.dto.*
 
 class AuthRepository(private val api: ApiService, private val ts: TokenStore) {
     suspend fun register(
-        email: String,
-        password: String,
-        displayName: String,
-        gender: String,
-        age: Int,
-        country: String,
-        state: String,
-        city: String,
-        timezone: String,
+        email: String, password: String, displayName: String,
+        gender: String, age: Int, country: String, state: String, city: String, timezone: String,
     ): ApiResult<AuthDataDto> {
         val res = api.register(
             RegisterRequest(email, password, displayName, gender, age, country, state, city, timezone)
@@ -31,4 +24,10 @@ class AuthRepository(private val api: ApiService, private val ts: TokenStore) {
     suspend fun logout() = ts.clear()
     suspend fun isLoggedIn() = !ts.getAccessToken().isNullOrBlank()
     suspend fun me(): ApiResult<MeResponse> = api.me().toResult()
+    
+    // NEW: Added these methods to fix "Cannot access api" error
+    suspend fun pause(): ApiResult<MeResponse> = api.pauseMe().toResult()
+    suspend fun resume(): ApiResult<MeResponse> = api.resumeMe().toResult()
+    suspend fun block(): ApiResult<Map<String, Boolean>> = api.blockMe().toResult()
+    suspend fun delete(): ApiResult<Map<String, Any>> = api.deleteMe().toResult()
 }
