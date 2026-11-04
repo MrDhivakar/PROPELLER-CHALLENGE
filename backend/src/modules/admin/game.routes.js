@@ -18,7 +18,7 @@ router.post('/', asyncHandler(async (req, res) => {
 // Get Live Participants for a game
 router.get('/:id/live', asyncHandler(async (req, res) => {
   const participants = await GameParticipant.find({ gameId: req.params.id })
-    .populate('userId', 'displayName email phone');
+    .populate('userId', 'displayName email');
   res.json({ success: true, data: { participants } });
 }));
 
