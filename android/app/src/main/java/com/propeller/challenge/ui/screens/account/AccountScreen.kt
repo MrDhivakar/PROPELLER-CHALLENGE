@@ -20,14 +20,17 @@ fun AccountScreen(app: PropellerApplication, onBack: () -> Unit, onDeleted: () -
         Spacer(Modifier.height(12.dp))
         Text("Pause, block, or delete anytime. No penalty, no shame, no streaks.", color = TextMuted)
         Spacer(Modifier.height(24.dp))
-        PropellerButton("Block further task offers", isPrimary = false) {
+        
+        PropellerButton(text = "Block further task offers", isPrimary = false) {
             scope.launch {
-                runCatching { app.authRepository.api.blockMe() }
+                runCatching { app.authRepository.block() }
                 msg = "Blocked. No further task offers will be sent."
             }
         }
         Spacer(Modifier.height(12.dp))
-        PropellerButton("Delete account", isPrimary = false) { confirm = true }
+        
+        PropellerButton(text = "Delete account", isPrimary = false) { confirm = true }
+        
         if (confirm) {
             Spacer(Modifier.height(12.dp))
             Card(colors = CardDefaults.cardColors(containerColor = SurfaceDark)) {
@@ -41,7 +44,7 @@ fun AccountScreen(app: PropellerApplication, onBack: () -> Unit, onDeleted: () -
                         }
                         Button(onClick = {
                             scope.launch {
-                                runCatching { app.authRepository.api.deleteMe() }
+                                runCatching { app.authRepository.delete() }
                                 app.authRepository.logout(); onDeleted()
                             }
                         }, modifier = Modifier.weight(1f),
