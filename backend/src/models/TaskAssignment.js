@@ -18,4 +18,4 @@ TaskAssignmentSchema.index({ taskId: 1, userId: 1 }, { unique: true });
 TaskAssignmentSchema.index({ userId: 1, assignmentStatus: 1, offeredAt: -1 });
 
 export const TaskAssignment = mongoose.model('TaskAssignment', TaskAssignmentSchema);
-export const ASSIGNMENT_STATUSES = ASSIGNMENT_STATUSES;
+export { ASSIGNMENT_STATUSES };
