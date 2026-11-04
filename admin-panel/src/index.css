@@ -1,0 +1,53 @@
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0A0E14;
+  color: #E6EAF0;
+}
+a { color: #4A90C2; text-decoration: none; }
+a:hover { text-decoration: underline; }
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid #1E2631;
+  background: #151A22;
+  color: #E6EAF0;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+button:hover { background: #1E2631; }
+button.primary { background: #4A90C2; color: #0A0E14; border-color: #4A90C2; font-weight: 600; }
+button.primary:hover { background: #7BA7C9; }
+button.danger { border-color: #C25A5A; color: #C25A5A; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+input, textarea, select {
+  font-family: inherit;
+  background: #151A22;
+  color: #E6EAF0;
+  border: 1px solid #1E2631;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  width: 100%;
+}
+input:focus, textarea:focus, select:focus { outline: none; border-color: #4A90C2; }
+label { display: block; font-size: 12px; color: #8B96A5; margin-bottom: 6px; margin-top: 12px; }
+h1 { font-size: 24px; font-weight: 600; margin: 0 0 8px 0; }
+h2 { font-size: 18px; font-weight: 600; margin: 24px 0 12px 0; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 10px 8px; border-bottom: 1px solid #1E2631; color: #8B96A5; font-weight: 500; font-size: 12px; text-transform: uppercase; }
+td { padding: 12px 8px; border-bottom: 1px solid #151A22; font-size: 14px; }
+tr:hover td { background: #10151C; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+.badge-active { background: #1A3A2A; color: #5FB088; }
+.badge-paused { background: #3A2A1A; color: #C2A25A; }
+.badge-suspended { background: #3A1A1A; color: #C25A5A; }
+.badge-pending { background: #2A2A3A; color: #8B96A5; }
+.badge-draft { background: #1E2631; color: #8B96A5; }
+.badge-published { background: #1A3A2A; color: #5FB088; }
+.badge-approved { background: #1A3A2A; color: #5FB088; }
+.badge-rejected { background: #3A1A1A; color: #C25A5A; }
+.error-banner { background: rgba(194,90,90,0.15); border: 1px solid #C25A5A; color: #C25A5A; padding: 10px 14px; border-radius: 8px; margin: 12px 0; font-size: 14px; }
+.success-banner { background: rgba(95,176,136,0.15); border: 1px solid #5FB088; color: #5FB088; padding: 10px 14px; border-radius: 8px; margin: 12px 0; font-size: 14px; }
