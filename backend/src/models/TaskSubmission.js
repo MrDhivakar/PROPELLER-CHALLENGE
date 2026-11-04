@@ -27,4 +27,4 @@ TaskSubmissionSchema.pre('validate', function (next) {
 });
 
 export const TaskSubmission = mongoose.model('TaskSubmission', TaskSubmissionSchema);
-export const SUBMISSION_STATUSES = SUBMISSION_STATUSES;
+export { SUBMISSION_STATUSES };
