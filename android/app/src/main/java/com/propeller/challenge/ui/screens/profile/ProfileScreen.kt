@@ -33,12 +33,15 @@ fun ProfileScreen(app: PropellerApplication, onBack: () -> Unit, onAccount: () -
         Spacer(Modifier.height(8.dp))
         Text("Status: ${u.accountStatus}", color = TextMuted)
         Spacer(Modifier.weight(1f))
+        
         PropellerButton(
-            if (busy) "..." else if (u.accountStatus == "paused") "Resume account" else "Pause account",
-            enabled = !busy, isPrimary = false) {
+            text = if (busy) "..." else if (u.accountStatus == "paused") "Resume account" else "Pause account",
+            enabled = !busy, 
+            isPrimary = false
+        ) {
             busy = true
             scope.launch {
-                if (u.accountStatus == "paused") app.authRepository.api.resumeMe() else app.authRepository.api.pauseMe()
+                if (u.accountStatus == "paused") app.authRepository.resume() else app.authRepository.pause()
                 busy = false
                 when (val me = app.authRepository.me()) {
                     is ApiResult.Success -> user = me.data.user
@@ -47,6 +50,6 @@ fun ProfileScreen(app: PropellerApplication, onBack: () -> Unit, onAccount: () -
             }
         }
         Spacer(Modifier.height(8.dp))
-        PropellerButton("Account controls", onClick = onAccount, isPrimary = false)
+        PropellerButton(text = "Account controls", isPrimary = false, onClick = onAccount)
     }
 }
