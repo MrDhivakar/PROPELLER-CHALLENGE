@@ -14,4 +14,4 @@ const BlockedUserSchema = new mongoose.Schema({
 BlockedUserSchema.index({ unblockedAt: 1 });
 
 export const BlockedUser = mongoose.model('BlockedUser', BlockedUserSchema);
-export const BLOCK_REASONS = BLOCK_REASONS;
+export { BLOCK_REASONS };
