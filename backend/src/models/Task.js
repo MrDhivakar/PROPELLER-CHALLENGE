@@ -41,5 +41,4 @@ TaskSchema.pre('save', function (next) {
 export const Task = mongoose.model('Task', TaskSchema);
 export const TASK_CATEGORIES = CATEGORIES;
 export const TASK_DIFFICULTIES = DIFFICULTIES;
-export const SAFETY_STATUSES = SAFETY_STATUSES;
-export const PUBLISH_STATUSES = PUBLISH_STATUSES;
+export { SAFETY_STATUSES, PUBLISH_STATUSES };
