@@ -9,6 +9,7 @@ import { TasksPage } from './pages/Tasks';
 import { SubmissionsPage } from './pages/Submissions';
 import { ReportsPage } from './pages/Reports';
 import { LogsPage } from './pages/Logs';
+import { GamesPage } from './pages/Games'; // NEW IMPORT
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="tasks" element={<TasksPage />} />
+            <Route path="games" element={<GamesPage />} /> {/* NEW ROUTE */}
             <Route path="submissions" element={<SubmissionsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="logs" element={<LogsPage />} />
