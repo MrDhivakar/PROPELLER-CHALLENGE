@@ -35,8 +35,14 @@ fun PropellerTextField(value: String, onChange: (String) -> Unit, label: String,
         modifier = Modifier.fillMaxWidth())
 }
 
+// HERE IS THE FIX: onClick moved to the LAST parameter
 @Composable
-fun PropellerButton(text: String, onClick: () -> Unit, enabled: Boolean = true, isPrimary: Boolean = true) {
+fun PropellerButton(
+    text: String, 
+    enabled: Boolean = true, 
+    isPrimary: Boolean = true, 
+    onClick: () -> Unit
+) {
     Button(onClick = onClick, enabled = enabled,
         colors = if (isPrimary) ButtonDefaults.buttonColors(containerColor = OceanBlue, contentColor = Charcoal)
                  else ButtonDefaults.buttonColors(containerColor = SurfaceElev, contentColor = TextPrimary),
