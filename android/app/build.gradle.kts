@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val apiUrlFromEnv: String = System.getenv("PROPELLER_API_URL") ?: "http://10.0.2.2:10000/api/v1/"
+val apiUrlFromEnv: String = System.getenv("PROPELLER_API_URL") ?: "https://propellerchallenge.onrender.com/api/v1/"
 
 android {
     namespace = "com.propeller.challenge"
