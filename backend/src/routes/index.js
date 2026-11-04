@@ -13,6 +13,7 @@ import adminTasksRoutes from '../modules/admin/tasks.routes.js';
 import adminSubmissionsRoutes from '../modules/admin/submissions.routes.js';
 import adminReportsRoutes from '../modules/admin/reports.routes.js';
 import adminLogsRoutes from '../modules/admin/logs.routes.js';
+import adminGameRoutes from '../modules/admin/game.routes.js'; // NEW IMPORT
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/admin/tasks', adminTasksRoutes);
 router.use('/admin/submissions', adminSubmissionsRoutes);
 router.use('/admin/reports', adminReportsRoutes);
 router.use('/admin/logs', adminLogsRoutes);
+router.use('/admin/games', adminGameRoutes); // NEW ROUTE
 
 export default router;
