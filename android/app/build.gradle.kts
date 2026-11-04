@@ -61,5 +61,12 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.3.1")
     implementation("androidx.media3:media3-ui:1.3.1")
 
+    // NEW: MapLibre for Open Source Map (No API Key required)
+    implementation("org.maplibre.gl:android-sdk:11.5.2")
+    implementation("org.maplibre.gl:android-plugin-annotation-v9:3.0.0")
+    
+    // NEW: Google Play Services for Live Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
