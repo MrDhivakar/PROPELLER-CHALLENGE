@@ -1,0 +1,3 @@
+-keep class com.propeller.challenge.data.remote.dto.** { *; }
+-keepattributes Signature
+-keepattributes *Annotation*
