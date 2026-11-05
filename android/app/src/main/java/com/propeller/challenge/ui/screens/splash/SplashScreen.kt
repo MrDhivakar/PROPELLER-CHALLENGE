@@ -16,8 +16,16 @@ import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(app: PropellerApplication, onDone: () -> Unit) {
-    LaunchedEffect(Unit) { delay(500); onDone() }
+fun SplashScreen(app: PropellerApplication, onLoggedIn: () -> Unit, onNotLoggedIn: () -> Unit) {
+    LaunchedEffect(Unit) {
+        delay(1000) // 1 sec wait
+        if (app.authRepository.isLoggedIn()) {
+            onLoggedIn()
+        } else {
+            onNotLoggedIn()
+        }
+    }
+    
     Column(
         Modifier.fillMaxSize().background(Charcoal),
         horizontalAlignment = Alignment.CenterHorizontally,
