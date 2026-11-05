@@ -7,11 +7,16 @@ const LocationGameSchema = new mongoose.Schema({
     type: { type: String, enum: ['Point'], default: 'Point' },
     coordinates: { type: [Number], required: true } // [longitude, latitude]
   },
+  address: {
+    country: { type: String, default: 'Unknown' },
+    state: { type: String, default: 'Unknown' },
+    district: { type: String, default: 'Unknown' }
+  },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   rewardCardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Card', required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
-  status: { type: String, enum: ['upcoming', 'live', 'ended'], default: 'upcoming' }
+  status: { type: String, enum: ['upcoming', 'live', 'ended'], default: 'live' }
 }, { timestamps: true });
 
 LocationGameSchema.index({ location: '2dsphere' });
