@@ -9,13 +9,11 @@ import { Card } from '../../models/Card.js';
 const router = Router();
 router.use(authenticateUser);
 
-// Get active/upcoming games
 router.get('/', asyncHandler(async (req, res) => {
-  const games = await LocationGame.find({ status: { $in: ['upcoming', 'live'] } }).populate('rewardCardId');
+  const games = await LocationGame.find({ status: 'live' }).populate('rewardCardId');
   res.json({ success: true, data: { games } });
 }));
 
-// Accept game
 router.post('/:id/accept', asyncHandler(async (req, res) => {
   let participant = await GameParticipant.findOne({ gameId: req.params.id, userId: req.user._id });
   if (!participant) {
@@ -24,7 +22,6 @@ router.post('/:id/accept', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { participant } });
 }));
 
-// Update live location (called by Android periodically)
 router.post('/:id/location', asyncHandler(async (req, res) => {
   const { lat, lng } = req.body;
   await GameParticipant.updateOne(
@@ -34,7 +31,13 @@ router.post('/:id/location', asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-// Submit answer
+// NEW: Get all live players for the map
+router.get('/:id/live-players', asyncHandler(async (req, res) => {
+  const players = await GameParticipant.find({ gameId: req.params.id, status: 'accepted' })
+    .populate('userId', 'displayName');
+  res.json({ success: true, data: { players } });
+}));
+
 router.post('/:id/submit', asyncHandler(async (req, res) => {
   const { answer } = req.body;
   await GameParticipant.updateOne(
@@ -44,26 +47,21 @@ router.post('/:id/submit', asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-// Get User's Cards
 router.get('/my-cards', asyncHandler(async (req, res) => {
   const cards = await UserCard.find({ userId: req.user._id }).populate('cardId');
   res.json({ success: true, data: { cards } });
 }));
 
-// Claim / Combine Cards (5 same cards = 1 next level card)
 router.post('/claim-card', asyncHandler(async (req, res) => {
   const { cardId } = req.body;
   const userCard = await UserCard.findOne({ userId: req.user._id, cardId });
   if (!userCard || userCard.quantity < 5) {
-    return res.status(400).json({ success: false, error: { message: "You need 5 of the same card to claim the next level." } });
+    return res.status(400).json({ success: false, error: { message: "Need 5 cards to combine." } });
   }
-  
   const currentCard = await Card.findById(cardId);
   const nextCard = await Card.findOne({ level: currentCard.level + 1 });
-
   if (!nextCard) return res.status(400).json({ success: false, error: { message: "Max level reached!" } });
 
-  // Deduct 5, add 1 next level
   userCard.quantity -= 5;
   if (userCard.quantity === 0) await userCard.deleteOne(); else await userCard.save();
 
@@ -72,7 +70,6 @@ router.post('/claim-card', asyncHandler(async (req, res) => {
     { $inc: { quantity: 1 } },
     { upsert: true, new: true }
   );
-
   res.json({ success: true, data: { message: "Card Upgraded!", newCard: nextCard } });
 }));
 
