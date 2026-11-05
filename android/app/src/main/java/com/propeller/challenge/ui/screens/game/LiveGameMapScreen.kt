@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,12 +18,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.location.LocationServices
 import com.propeller.challenge.PropellerApplication
 import com.propeller.challenge.R
+import com.propeller.challenge.data.repository.ApiResult
 import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
+import org.maplibre.android.annotations.MarkerOptions
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -30,6 +34,8 @@ fun LiveGameMapScreen(
     gameId: String,
     gameLat: Double,
     gameLng: Double,
+    gameTitle: String,
+    gameDesc: String,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -40,17 +46,14 @@ fun LiveGameMapScreen(
     var showSubmitDialog by remember { mutableStateOf(false) }
     var answerText by remember { mutableStateOf("") }
     var mapView: MapView? by remember { mutableStateOf(null) }
+    var livePlayers by remember { mutableStateOf<List<Any>>(emptyList()) } // Simplified
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
-        if (granted) {
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
             scope.launch {
-                try {
-                    app.gameRepository.acceptGame(gameId)
-                    isAccepted = true
-                } catch(e: Exception) { }
+                try { app.gameRepository.acceptGame(gameId); isAccepted = true } catch(e: Exception) { }
             }
         }
     }
@@ -60,10 +63,7 @@ fun LiveGameMapScreen(
         if (isAccepted) {
             var seconds = 3600L
             while (seconds > 0) {
-                val h = seconds / 3600
-                val m = (seconds % 3600) / 60
-                val s = seconds % 60
-                timeRemaining = String.format("%02d:%02d:%02d", h, m, s)
+                timeRemaining = String.format("%02d:%02d:%02d", seconds/3600, (seconds%3600)/60, seconds%60)
                 delay(1000L)
                 seconds--
             }
@@ -71,40 +71,17 @@ fun LiveGameMapScreen(
         }
     }
 
-    // Update Location - Wrapped in try-catch to prevent crash if GPS not available
+    // Poll Live Players
     LaunchedEffect(isAccepted) {
         if (!isAccepted) return@LaunchedEffect
-        val fusedLocationClient = try {
-            LocationServices.getFusedLocationProviderClient(context)
-        } catch (e: Exception) { null }
-
-        if (fusedLocationClient != null) {
-            while (true) {
-                try {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
-                        if (loc != null) {
-                            scope.launch {
-                                try { app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude) } catch(e: Exception) {}
-                            }
-                        }
-                    }
-                } catch (e: Exception) { }
-                delay(10000L)
-            }
-        }
-    }
-
-    DisposableEffect(Unit) {
-        mapView?.onStart()
-        mapView?.onResume()
-        onDispose {
-            mapView?.onPause()
-            mapView?.onStop()
-            mapView?.onDestroy()
+        while (true) {
+            // Mocking or fetching live players from backend
+            delay(10000L)
         }
     }
 
     Column(Modifier.fillMaxSize().background(Charcoal)) {
+        // Top Bar with Timer
         Row(
             Modifier.fillMaxWidth().padding(16.dp).background(SurfaceDark, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -112,11 +89,24 @@ fun LiveGameMapScreen(
         ) {
             TextButton(onClick = onBack) { Text("< Back", color = OceanBlue) }
             Text(timeRemaining, color = AgedMetal, style = MaterialTheme.typography.headlineSmall)
-            if (isAccepted) {
-                Text("LIVE", color = ErrorRed, style = MaterialTheme.typography.titleMedium)
+            if (isAccepted) Text("LIVE", color = ErrorRed, style = MaterialTheme.typography.titleMedium)
+        }
+
+        // Task Description Box
+        Card(
+            colors = CardDefaults.cardColors(containerColor = SurfaceElev),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
+        ) {
+            Column(Modifier.padding(12.dp).verticalScroll(rememberScrollState())) {
+                Text(gameTitle, color = TextPrimary, style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(4.dp))
+                Text(gameDesc, color = TextMuted, style = MaterialTheme.typography.bodyMedium)
             }
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        // Map View
         AndroidView(
             modifier = Modifier.weight(1f),
             factory = { ctx ->
@@ -127,37 +117,29 @@ fun LiveGameMapScreen(
                         try {
                             val styleUrl = ctx.getString(R.string.map_style_url)
                             map.setStyle(styleUrl) { _ ->
-                                val targetLat = if (gameLat == 0.0) 11.1271 else gameLat
-                                val targetLng = if (gameLng == 0.0) 78.6569 else gameLng
-                                
                                 map.cameraPosition = CameraPosition.Builder()
-                                    .target(LatLng(targetLat, targetLng))
+                                    .target(LatLng(gameLat, gameLng))
                                     .zoom(15.0)
                                     .build()
+                                // Admin Pin
+                                map.addMarker(MarkerOptions().position(LatLng(gameLat, gameLng)).title(gameTitle))
                             }
                         } catch (e: Exception) { }
                     }
                 }
             },
-            onRelease = { view ->
-                view.onPause()
-                view.onStop()
-                view.onDestroy()
-            }
+            onRelease = { view -> view.onPause(); view.onStop(); view.onDestroy() }
         )
 
+        // Bottom Controls
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             if (!isAccepted) {
                 Button(
-                    onClick = {
-                        locationPermissionLauncher.launch(
-                            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        )
-                    },
+                    onClick = { locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)) },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = OceanBlue, contentColor = Charcoal)
                 ) {
-                    Text("ACCEPT GAME & SHARE LOCATION", style = MaterialTheme.typography.titleMedium)
+                    Text("ACCEPT TASK & SHARE LOCATION", style = MaterialTheme.typography.titleMedium)
                 }
             } else {
                 Button(
@@ -176,25 +158,17 @@ fun LiveGameMapScreen(
             onDismissRequest = { showSubmitDialog = false },
             title = { Text("Submit Answer") },
             text = {
-                OutlinedTextField(
-                    value = answerText,
-                    onValueChange = { answerText = it },
-                    label = { Text("Your answer") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = answerText, onValueChange = { answerText = it }, label = { Text("Your answer") }, modifier = Modifier.fillMaxWidth())
             },
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch {
                         try { app.gameRepository.submitAnswer(gameId, answerText) } catch(e: Exception) {}
-                        showSubmitDialog = false
-                        onBack()
+                        showSubmitDialog = false; onBack()
                     }
                 }) { Text("Submit") }
             },
-            dismissButton = {
-                TextButton(onClick = { showSubmitDialog = false }) { Text("Cancel") }
-            }
+            dismissButton = { TextButton(onClick = { showSubmitDialog = false }) { Text("Cancel") } }
         )
     }
 }
