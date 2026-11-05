@@ -11,6 +11,7 @@ import com.propeller.challenge.ui.screens.account.AccountScreen
 import com.propeller.challenge.ui.screens.auth.ForgotPasswordScreen
 import com.propeller.challenge.ui.screens.auth.LoginScreen
 import com.propeller.challenge.ui.screens.auth.RegisterScreen
+import com.propeller.challenge.ui.screens.cards.MyCardsScreen // NEW
 import com.propeller.challenge.ui.screens.game.LiveGameMapScreen
 import com.propeller.challenge.ui.screens.history.HistoryScreen
 import com.propeller.challenge.ui.screens.home.HomeScreen
@@ -36,7 +37,8 @@ object Routes {
     const val Settings = "settings"
     const val Report = "report/{taskId}"
     const val Account = "account"
-    const val LiveGame = "game/{id}/{lat}/{lng}" // NEW
+    const val LiveGame = "game/{id}/{lat}/{lng}"
+    const val MyCards = "my_cards" // NEW
 }
 
 @Composable
@@ -65,15 +67,17 @@ fun PropellerNavHost(app: PropellerApplication) {
         composable(Routes.Home) {
             HomeScreen(app,
                 onTaskClick = { id -> nav.navigate("task/$id") },
-                onGameClick = { id, lat, lng -> nav.navigate("game/$id/$lat/$lng") }, // NEW
+                onGameClick = { id, lat, lng -> nav.navigate("game/$id/$lat/$lng") },
                 onHistory = { nav.navigate(Routes.History) },
                 onProfile = { nav.navigate(Routes.Profile) },
                 onSettings = { nav.navigate(Routes.Settings) },
-                onCards = { /* TODO: nav.navigate("cards") */ },
+                onCards = { nav.navigate(Routes.MyCards) }, // LINKED
                 onLoggedOut = { nav.navigate(Routes.Login) { popUpTo(Routes.Home) { inclusive = true } } }
             )
         }
         
+        composable(Routes.MyCards) { MyCardsScreen(app, onBack = { nav.popBackStack() }) } // NEW ROUTE
+
         composable(Routes.LiveGame, arguments = listOf(
             navArgument("id") { type = NavType.StringType },
             navArgument("lat") { type = NavType.StringType },
