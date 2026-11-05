@@ -1,5 +1,6 @@
 package com.propeller.challenge.ui.screens.cards
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.propeller.challenge.PropellerApplication
@@ -18,7 +20,6 @@ import com.propeller.challenge.data.repository.ApiResult
 import com.propeller.challenge.ui.components.TopBar
 import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.clickable
 
 @Composable
 fun MyCardsScreen(app: PropellerApplication, onBack: () -> Unit) {
@@ -52,7 +53,7 @@ fun MyCardsScreen(app: PropellerApplication, onBack: () -> Unit) {
             }
         } else if (cards.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No cards yet. Play games to win cards!", color = TextMuted)
+                Text("No cards yet. Win games to collect!", color = TextMuted)
             }
         } else {
             LazyVerticalGrid(
@@ -74,14 +75,25 @@ fun MyCardsScreen(app: PropellerApplication, onBack: () -> Unit) {
                         ) {
                             Text("Lvl ${card.level}", color = AgedMetal, fontWeight = FontWeight.Bold)
                             
-                            // If image URL exists, load it here (using Coil library)
-                            // For now, showing a placeholder logo
-                            Icon(
-                                painter = androidx.compose.ui.res.painterResource(id = com.propeller.challenge.R.drawable.propeller_logo),
-                                contentDescription = null,
-                                tint = OceanBlue,
-                                modifier = Modifier.size(60.dp)
+                            // Direct Local Image loading based on Level
+                            val imageResId = androidx.compose.ui.platform.LocalContext.current.resources.getIdentifier(
+                                "card_${card.level}", "drawable", androidx.compose.ui.platform.LocalContext.current.packageName
                             )
+                            
+                            if (imageResId != 0) {
+                                Image(
+                                    painter = painterResource(id = imageResId),
+                                    contentDescription = card.name,
+                                    modifier = Modifier.size(80.dp)
+                                )
+                            } else {
+                                // Fallback logo
+                                Image(
+                                    painter = painterResource(id = com.propeller.challenge.R.drawable.propeller_logo),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(60.dp)
+                                )
+                            }
                             
                             Text(card.name, color = TextPrimary, maxLines = 1)
                             Text("Qty: ${userCard.quantity}", color = OceanLight, fontWeight = FontWeight.Bold)
