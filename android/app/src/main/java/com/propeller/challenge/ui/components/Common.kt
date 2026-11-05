@@ -27,6 +27,7 @@ fun PropellerTextField(value: String, onChange: (String) -> Unit, label: String,
         value = value, onValueChange = onChange,
         label = { Text(label, color = TextMuted) },
         singleLine = true,
+        shape = RoundedCornerShape(12.dp),
         visualTransformation = if (isPassword) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         colors = OutlinedTextFieldDefaults.colors(
@@ -35,7 +36,6 @@ fun PropellerTextField(value: String, onChange: (String) -> Unit, label: String,
         modifier = Modifier.fillMaxWidth())
 }
 
-// HERE IS THE FIX: onClick moved to the LAST parameter
 @Composable
 fun PropellerButton(
     text: String, 
@@ -44,10 +44,11 @@ fun PropellerButton(
     onClick: () -> Unit
 ) {
     Button(onClick = onClick, enabled = enabled,
-        colors = if (isPrimary) ButtonDefaults.buttonColors(containerColor = OceanBlue, contentColor = Charcoal)
+        colors = if (isPrimary) ButtonDefaults.buttonColors(containerColor = OceanBlue, contentColor = Color.White)
                  else ButtonDefaults.buttonColors(containerColor = SurfaceElev, contentColor = TextPrimary),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth().height(52.dp)) {
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier.fillMaxWidth().height(56.dp)
+    ) {
         Text(text, style = MaterialTheme.typography.labelLarge)
     }
 }
@@ -55,15 +56,15 @@ fun PropellerButton(
 @Composable
 fun ErrorBanner(message: String?) {
     if (message.isNullOrBlank()) return
-    Box(Modifier.fillMaxWidth().background(Color(0x33C25A5A), RoundedCornerShape(8.dp)).padding(12.dp)) {
+    Box(Modifier.fillMaxWidth().background(Color(0x33EF4444), RoundedCornerShape(12.dp)).padding(16.dp)) {
         Text(message, color = ErrorRed, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
 fun TopBar(title: String, onBack: () -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        TextButton(onClick = onBack) { Text("< Back", color = OceanBlue) }
+    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = onBack) { Text("< Back", color = OceanLight, style = MaterialTheme.typography.titleMedium) }
         Spacer(Modifier.weight(1f))
         Text(title, color = TextPrimary, style = MaterialTheme.typography.titleLarge)
     }
