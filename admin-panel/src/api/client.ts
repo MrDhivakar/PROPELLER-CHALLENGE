@@ -110,7 +110,7 @@ export const listLogs = (limit?: number) =>
   req<{ logs: LogEntry[] }>(`/admin/logs${limit ? `?limit=${limit}` : ''}`);
 
 // ---------------------------------------------------------
-// LOCATION GAMES & CARDS MANAGEMENT (UPDATED TYPES)
+// LOCATION GAMES & CARDS MANAGEMENT
 // ---------------------------------------------------------
 
 export const listCards = () => req<{ cards: any[] }>('/admin/games/cards');
@@ -120,12 +120,12 @@ export const createCard = (body: { cardId: string; name: string; level: number; 
 
 export const listGames = () => req<{ games: any[] }>('/admin/games');
 
-// UPDATED: Added address and made location type lenient to avoid TS errors
+// FIXED: Replaced endTime with durationMinutes to match backend logic
 export const createGame = (body: {
   title: string; 
   description: string; 
   startTime: string; 
-  endTime: string;
+  durationMinutes: number; // <--- ADDED
   location: { type: string; coordinates: [number, number] }; 
   address: { country: string; state: string; district: string };
   rewardCardId: string;
