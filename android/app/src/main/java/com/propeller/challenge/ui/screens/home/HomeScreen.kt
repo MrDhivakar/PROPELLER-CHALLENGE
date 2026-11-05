@@ -23,7 +23,6 @@ import com.propeller.challenge.data.repository.ApiResult
 import com.propeller.challenge.ui.components.ErrorBanner
 import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.launch
-import java.time.Instant
 
 @Composable
 fun HomeScreen(
@@ -119,28 +118,20 @@ fun HomeScreen(
                     val lng = game.location.coordinates.getOrNull(0) ?: 0.0
                     val lat = game.location.coordinates.getOrNull(1) ?: 0.0
                     
-                    // STATUS CALCULATION LOGIC
-                    val now = Instant.now()
-                    val start = try { Instant.parse(game.startTime) } catch(e: Exception) { now }
-                    val end = try { Instant.parse(game.endTime) } catch(e: Exception) { now }
-                    
-                    val isUpcoming = now.isBefore(start)
-                    val isExpired = now.isAfter(end)
-                    val hasWinner = game.winnerId != null
-                    val isActive = !isUpcoming && !isExpired && !hasWinner
+                    // FIX: Use game.status directly from backend
+                    val isActive = game.status == "live"
 
-                    // UI Text & Color based on Status
-                    val statusText = when {
-                        hasWinner -> "WINNER DECLARED"
-                        isUpcoming -> "UPCOMING"
-                        isExpired -> "EXPIRED"
-                        else -> "ACTIVE NOW"
+                    val statusText = when (game.status) {
+                        "upcoming" -> "UPCOMING"
+                        "live" -> "ACTIVE NOW"
+                        "ended" -> if (game.winnerId != null) "WINNER DECLARED" else "EXPIRED"
+                        else -> "UNKNOWN"
                     }
-                    val statusColor = when {
-                        hasWinner -> AgedMetal
-                        isUpcoming -> OceanLight
-                        isExpired -> ErrorRed
-                        else -> OceanBlue
+                    val statusColor = when (game.status) {
+                        "upcoming" -> OceanLight
+                        "live" -> OceanBlue
+                        "ended" -> if (game.winnerId != null) AgedMetal else ErrorRed
+                        else -> TextMuted
                     }
 
                     Card(
@@ -165,10 +156,6 @@ fun HomeScreen(
                             Spacer(Modifier.height(8.dp))
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("Duration: ${game.durationMinutes} mins", color = TextMuted, style = MaterialTheme.typography.bodySmall)
-                                if (isExpired && !hasWinner) {
-                                    Spacer(Modifier.width(8.dp))
-                                    Text("(Time up, awaiting Admin result)", color = ErrorRed, style = MaterialTheme.typography.bodySmall)
-                                }
                             }
                         }
                     }
