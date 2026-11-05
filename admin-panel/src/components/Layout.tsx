@@ -5,7 +5,8 @@ const links = [
   { to: '/', label: 'Dashboard' },
   { to: '/users', label: 'Users' },
   { to: '/tasks', label: 'Daily Tasks' },
-  { to: '/games', label: 'Location Games' }, // NEW LINK
+  { to: '/games', label: 'Location Games' },
+  { to: '/cards', label: 'Card Manager' }, // NEW LINK
   { to: '/submissions', label: 'Submissions' },
   { to: '/reports', label: 'Reports' },
   { to: '/logs', label: 'Activity Logs' },
