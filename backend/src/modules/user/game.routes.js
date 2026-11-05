@@ -10,7 +10,7 @@ const router = Router();
 router.use(authenticateUser);
 
 router.get('/', asyncHandler(async (req, res) => {
-  const games = await LocationGame.find({ status: 'live' }).populate('rewardCardId');
+  const games = await LocationGame.find().populate('rewardCardId');
   res.json({ success: true, data: { games } });
 }));
 
@@ -31,19 +31,27 @@ router.post('/:id/location', asyncHandler(async (req, res) => {
   res.json({ success: true });
 }));
 
-// NEW: Get all live players for the map
+// Get Live Players for Map
 router.get('/:id/live-players', asyncHandler(async (req, res) => {
   const players = await GameParticipant.find({ gameId: req.params.id, status: 'accepted' })
     .populate('userId', 'displayName');
   res.json({ success: true, data: { players } });
 }));
 
+// Submit Answer (Prevent re-submit)
 router.post('/:id/submit', asyncHandler(async (req, res) => {
   const { answer } = req.body;
-  await GameParticipant.updateOne(
-    { gameId: req.params.id, userId: req.user._id },
-    { submittedAnswer: answer, status: 'submitted' }
-  );
+  const participant = await GameParticipant.findOne({ gameId: req.params.id, userId: req.user._id });
+  
+  if (!participant) return res.status(404).json({ success: false, error: { message: "Not accepted" } });
+  if (participant.status === 'submitted' || participant.status === 'winner') {
+    return res.status(400).json({ success: false, error: { message: "You have already submitted for this game!" } });
+  }
+
+  participant.submittedAnswer = answer;
+  participant.status = 'submitted';
+  await participant.save();
+  
   res.json({ success: true });
 }));
 
