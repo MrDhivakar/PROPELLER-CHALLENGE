@@ -61,13 +61,28 @@ export function GamesPage() {
 
   const handleCreateGame = async () => {
     if (!position || !rewardCardId) return alert('Select location and reward card');
+    
+    // FIXED TYPES: Casting coordinates to tuple
     const payload = {
-      title, description: desc, startTime, endTime, rewardCardId, address,
-      location: { type: 'Point', coordinates: [position.lng, position.lat] }
+      title, 
+      description: desc, 
+      startTime, 
+      endTime, 
+      rewardCardId, 
+      address,
+      location: { 
+        type: 'Point', 
+        coordinates: [position.lng, position.lat] as [number, number] 
+      }
     };
-    await createGame(payload);
-    alert('Game Created!');
-    listGames().then(r => setGames(r.games));
+    
+    try {
+      await createGame(payload);
+      alert('Game Created!');
+      listGames().then(r => setGames(r.games));
+    } catch (err: any) {
+      alert(err.message || 'Failed to create game');
+    }
   };
 
   return (
@@ -81,9 +96,13 @@ export function GamesPage() {
           <b>Auto Address:</b> {address.district}, {address.state}, {address.country}
         </div>
 
+        <label>Start Time</label>
         <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} />
+        
+        <label>End Time</label>
         <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} />
         
+        <label>Reward Card</label>
         <select value={rewardCardId} onChange={e => setRewardCardId(e.target.value)}>
           <option value="">Select Reward Card...</option>
           {cards.map(c => <option key={c._id} value={c._id}>Lvl {c.level} - {c.name}</option>)}
@@ -112,6 +131,7 @@ export function GamesPage() {
         <MapContainer center={[11.1271, 78.6569]} zoom={7} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <LocationMarker position={position} setPosition={setPosition} setAddress={setAddress} />
+          
           {games.map(g => (
             <Marker key={g._id} position={[g.location.coordinates[1], g.location.coordinates[0]]} icon={defaultIcon}>
               <Popup>
