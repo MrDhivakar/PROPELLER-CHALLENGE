@@ -34,7 +34,7 @@ function LocationMarker({ position, setPosition, setAddress }: any) {
 export function GamesPage() {
   const [games, setGames] = useState<any[]>([]);
   const [cards, setCards] = useState<any[]>([]);
-  const [selectedGame, setSelectedGame] = useState<string | null>(null);
+  const [selectedGame, setSelectedGame] = useState<any | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
   
   const [position, setPosition] = useState<any>(null);
@@ -42,7 +42,7 @@ export function GamesPage() {
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState(60);
   const [rewardCardId, setRewardCardId] = useState('');
 
   useEffect(() => {
@@ -53,25 +53,17 @@ export function GamesPage() {
   useEffect(() => {
     if (!selectedGame) return;
     const interval = setInterval(() => {
-      getLiveParticipants(selectedGame).then(r => setParticipants(r.participants)).catch(console.error);
+      getLiveParticipants(selectedGame._id).then(r => setParticipants(r.participants)).catch(console.error);
     }, 5000);
     return () => clearInterval(interval);
   }, [selectedGame]);
 
   const handleCreateGame = async () => {
-    if (!position || !rewardCardId) return alert('Select location and reward card');
+    if (!position || !rewardCardId || !startTime) return alert('Fill all fields');
     
     const payload = {
-      title, 
-      description: desc, 
-      startTime, 
-      endTime, 
-      rewardCardId, 
-      address,
-      location: { 
-        type: 'Point', 
-        coordinates: [position.lng, position.lat] as [number, number] 
-      }
+      title, description: desc, startTime, durationMinutes, rewardCardId, address,
+      location: { type: 'Point', coordinates: [position.lng, position.lat] as [number, number] }
     };
     
     try {
@@ -79,8 +71,18 @@ export function GamesPage() {
       alert('Game Created!');
       listGames().then(r => setGames(r.games));
     } catch (err: any) {
-      alert(err.message || 'Failed to create game');
+      alert(err.message || 'Failed');
     }
+  };
+
+  const getGameStatus = (g: any) => {
+    if (g.winnerId) return <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>🏆 FINISHED (WINNER DECLARED)</span>;
+    const now = new Date().getTime();
+    const start = new Date(g.startTime).getTime();
+    const end = new Date(g.endTime).getTime();
+    if (now < start) return <span style={{ color: '#06B6D4' }}>⏳ UPCOMING</span>;
+    if (now > end) return <span style={{ color: '#EF4444' }}>⚠️ EXPIRED</span>;
+    return <span style={{ color: '#10B981' }}>🟢 ACTIVE</span>;
   };
 
   return (
@@ -94,11 +96,11 @@ export function GamesPage() {
           <b>Auto Address:</b> {address.district}, {address.state}, {address.country}
         </div>
 
-        <label>Start Time</label>
+        <label>Start Date & Time</label>
         <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} />
-        
-        <label>End Time</label>
-        <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} />
+
+        <label>Duration (Minutes)</label>
+        <input type="number" min={1} value={durationMinutes} onChange={e => setDurationMinutes(Number(e.target.value))} />
         
         <label>Reward Card</label>
         <select value={rewardCardId} onChange={e => setRewardCardId(e.target.value)}>
@@ -109,40 +111,36 @@ export function GamesPage() {
         
         <hr style={{ borderColor: '#333', width: '100%' }} />
         
-        <h2>Live Participants</h2>
-        {!selectedGame ? <p>Select a game from map to see live users</p> : (
-          <div>
+        {selectedGame && (
+          <>
+            <h2>Game Details: {selectedGame.title}</h2>
+            <div style={{ marginBottom: 10 }}>{getGameStatus(selectedGame)}</div>
+            
+            {selectedGame.winnerId && (
+              <div style={{ padding: 10, background: '#F59E0B33', borderRadius: 8, border: '1px solid #F59E0B' }}>
+                🏆 Winner: <b>{participants.find(p => p.isWinner)?.userId?.displayName || 'Declared'}</b>
+              </div>
+            )}
+
+            <h3>Participants</h3>
             {participants.map(p => (
               <div key={p._id} style={{ background: '#0F141B', padding: 15, marginBottom: 10, borderRadius: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <b style={{ color: '#F9FAFB' }}>{p.userId?.displayName}</b> 
-                    <span style={{ color: '#9CA3AF', fontSize: 12, marginLeft: 8 }}>({p.status})</span>
+                    <b>{p.userId?.displayName}</b> <span>({p.status})</span>
                   </div>
-                  
-                  {!p.isWinner && p.status !== 'winner' && (
-                    <button 
-                      style={{ padding: '4px 12px', background: '#4F46E5', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }} 
-                      onClick={() => declareWinner(selectedGame, p._id)}
-                    >
-                      Mark Winner
-                    </button>
+                  {!p.isWinner && p.status !== 'winner' && !selectedGame.winnerId && (
+                    <button onClick={() => declareWinner(selectedGame._id, p._id)}>Mark Winner</button>
                   )}
-                  {p.isWinner && <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>🏆 WINNER</span>}
                 </div>
-
-                {/* NEW: Display User's Submitted Answer */}
                 {p.submittedAnswer && (
-                  <div style={{ marginTop: 12, padding: 10, background: '#1F2937', borderRadius: 6, borderLeft: '3px solid #06B6D4' }}>
-                    <span style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>Submitted Answer:</span>
-                    <p style={{ margin: '4px 0 0 0', color: '#F9FAFB', fontSize: 14, wordBreak: 'break-word' }}>
-                      {p.submittedAnswer}
-                    </p>
+                  <div style={{ marginTop: 10, padding: 10, background: '#1F2937', borderRadius: 6 }}>
+                    <b>Answer:</b> {p.submittedAnswer}
                   </div>
                 )}
               </div>
             ))}
-          </div>
+          </>
         )}
       </div>
 
@@ -154,8 +152,9 @@ export function GamesPage() {
           {games.map(g => (
             <Marker key={g._id} position={[g.location.coordinates[1], g.location.coordinates[0]]} icon={defaultIcon}>
               <Popup>
-                <b>{g.title}</b><br/>{g.address?.district}, {g.address?.country}
-                <button style={{ marginTop: 10, display: 'block' }} onClick={() => setSelectedGame(g._id)}>View Live Users</button>
+                <b>{g.title}</b><br/>
+                {getGameStatus(g)}
+                <button onClick={() => setSelectedGame(g)}>View Details</button>
               </Popup>
             </Marker>
           ))}
