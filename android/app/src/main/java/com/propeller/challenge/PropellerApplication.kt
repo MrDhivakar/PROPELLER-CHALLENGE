@@ -6,6 +6,7 @@ import com.propeller.challenge.core.network.RetrofitClient
 import com.propeller.challenge.data.repository.AuthRepository
 import com.propeller.challenge.data.repository.TaskRepository
 import com.propeller.challenge.data.repository.GameRepository
+import org.maplibre.android.MapLibre
 
 class PropellerApplication : Application() {
     lateinit var tokenStore: TokenStore
@@ -15,6 +16,14 @@ class PropellerApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        
+        // Initialize MapLibre globally
+        try {
+            MapLibre.getInstance(this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         tokenStore = TokenStore(this)
         val api = RetrofitClient.create(tokenStore)
         authRepository = AuthRepository(api, tokenStore)
