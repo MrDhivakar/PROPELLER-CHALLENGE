@@ -5,8 +5,6 @@ import type {
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:10000/api/v1';
 const TOKEN_KEY = 'propeller_admin_token';
 
-// Admin token in localStorage is acceptable for a single-admin internal panel.
-// Not a public-facing site. Documented in docs/API.md.
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 export const setToken = (t: string) => localStorage.setItem(TOKEN_KEY, t);
 export const clearToken = () => localStorage.removeItem(TOKEN_KEY);
@@ -110,3 +108,29 @@ export const resolveReport = (id: string, status: 'resolved' | 'dismissed' | 'un
 // --- Logs ---
 export const listLogs = (limit?: number) =>
   req<{ logs: LogEntry[] }>(`/admin/logs${limit ? `?limit=${limit}` : ''}`);
+
+// ---------------------------------------------------------
+// NEW: LOCATION GAMES & CARDS MANAGEMENT
+// ---------------------------------------------------------
+
+export const listCards = () => req<{ cards: any[] }>('/admin/games/cards');
+
+export const createCard = (body: { cardId: string; name: string; level: number; imageUrl: string; description?: string }) => 
+  req<{ card: any }>('/admin/games/cards', { method: 'POST', body: JSON.stringify(body) });
+
+export const listGames = () => req<{ games: any[] }>('/admin/games');
+
+export const createGame = (body: {
+  title: string; description: string; startTime: string; endTime: string;
+  location: { type: 'Point'; coordinates: [number, number] };
+  rewardCardId: string;
+}) => req<{ game: any }>('/admin/games', { method: 'POST', body: JSON.stringify(body) });
+
+export const getLiveParticipants = (gameId: string) => 
+  req<{ participants: any[] }>(`/admin/games/${gameId}/live`);
+
+export const declareWinner = (gameId: string, participantId: string) =>
+  req<{ message: string }>(`/admin/games/${gameId}/winner`, {
+    method: 'POST',
+    body: JSON.stringify({ participantId }),
+  });
