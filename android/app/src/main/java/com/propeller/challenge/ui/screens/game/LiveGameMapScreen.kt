@@ -35,9 +35,8 @@ fun LiveGameMapScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var mapView: MapView? by remember { mutableStateOf(null) }
     
-    var timeRemaining by remember { mutableStateOf("Calculating...") }
+    var timeRemaining by remember { mutableStateOf("WAITING") }
     var isAccepted by remember { mutableStateOf(false) }
     var showSubmitDialog by remember { mutableStateOf(false) }
     var answerText by remember { mutableStateOf("") }
@@ -48,29 +47,34 @@ fun LiveGameMapScreen(
         val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true
         if (granted) {
             scope.launch {
-                app.gameRepository.acceptGame(gameId)
-                isAccepted = true
+                try {
+                    app.gameRepository.acceptGame(gameId)
+                    isAccepted = true
+                } catch(e: Exception) {
+                    // Handle error
+                }
             }
         }
     }
 
-    // MapLibre Initialization
     LaunchedEffect(Unit) {
-        MapLibre.getInstance(context, null, null)
+        try { MapLibre.getInstance(context, null, null) } catch(e: Exception) {}
     }
 
-    // Countdown Timer (Mock 1 hour for now, in real app fetch from backend)
-    LaunchedEffect(Unit) {
-        var seconds = 3600L // 1 hour
-        while (seconds > 0) {
-            val h = seconds / 3600
-            val m = (seconds % 3600) / 60
-            val s = seconds % 60
-            timeRemaining = String.format("%02d:%02d:%02d", h, m, s)
-            delay(1000L)
-            seconds--
+    // Timer Logic: Starts ONLY when accepted
+    LaunchedEffect(isAccepted) {
+        if (isAccepted) {
+            var seconds = 3600L // 1 hour (You can fetch this from backend)
+            while (seconds > 0) {
+                val h = seconds / 3600
+                val m = (seconds % 3600) / 60
+                val s = seconds % 60
+                timeRemaining = String.format("%02d:%02d:%02d", h, m, s)
+                delay(1000L)
+                seconds--
+            }
+            timeRemaining = "TIME UP"
         }
-        timeRemaining = "TIME UP"
     }
 
     // Update Location every 10 seconds if accepted
@@ -81,21 +85,11 @@ fun LiveGameMapScreen(
             fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
                 if (loc != null) {
                     scope.launch {
-                        app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude)
+                        try { app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude) } catch(e: Exception) {}
                     }
                 }
             }
-            delay(10000L) // 10 sec
-        }
-    }
-
-    DisposableEffect(Unit) {
-        mapView?.onStart()
-        mapView?.onResume()
-        onDispose {
-            mapView?.onPause()
-            mapView?.onStop()
-            mapView?.onDestroy()
+            delay(10000L)
         }
     }
 
@@ -113,15 +107,15 @@ fun LiveGameMapScreen(
             }
         }
 
-        // Map View
+        // Map View (FIXED LIFECYCLE)
         AndroidView(
             modifier = Modifier.weight(1f),
             factory = { ctx ->
                 MapView(ctx).apply {
-                    mapView = this
                     onCreate(null)
+                    onStart()
+                    onResume()
                     getMapAsync { map ->
-                        // FIX IS HERE: Using ctx.getString to get the actual URL String
                         val styleUrl = ctx.getString(R.string.map_style_url)
                         map.setStyle(styleUrl) { style ->
                             map.cameraPosition = CameraPosition.Builder()
@@ -131,6 +125,11 @@ fun LiveGameMapScreen(
                         }
                     }
                 }
+            },
+            onRelease = { mapView ->
+                mapView.onPause()
+                mapView.onStop()
+                mapView.onDestroy()
             }
         )
 
@@ -176,7 +175,7 @@ fun LiveGameMapScreen(
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch {
-                        app.gameRepository.submitAnswer(gameId, answerText)
+                        try { app.gameRepository.submitAnswer(gameId, answerText) } catch(e: Exception) {}
                         showSubmitDialog = false
                         onBack()
                     }
