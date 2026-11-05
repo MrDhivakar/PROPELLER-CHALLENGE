@@ -30,9 +30,14 @@ fun TaskDetailScreen(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(taskId) {
-        val res = app.taskRepository.details(taskId)
-        if (res is ApiResult.Success) data = res.data
-        else if (res is ApiResult.Error) error = res.message
+        try {
+            when (val res = app.taskRepository.details(taskId)) {
+                is ApiResult.Success -> data = res.data
+                is ApiResult.Error -> error = res.message
+            }
+        } catch (e: Exception) {
+            error = "Network Error: Server might be sleeping. Please try again."
+        }
         loading = false
     }
 
@@ -72,9 +77,13 @@ fun TaskDetailScreen(
             PropellerButton(if (busy) "Accepting..." else "ACCEPT TASK", enabled = !busy) {
                 busy = true
                 scope.launch {
-                    when (val r = app.taskRepository.accept(d.assignment.id)) {
-                        is ApiResult.Success -> onAccepted(d.assignment.id)
-                        is ApiResult.Error -> error = r.message
+                    try {
+                        when (val r = app.taskRepository.accept(d.assignment.id)) {
+                            is ApiResult.Success -> onAccepted(d.assignment.id)
+                            is ApiResult.Error -> error = r.message
+                        }
+                    } catch (e: Exception) {
+                        error = "Network Error: Could not accept task."
                     }
                     busy = false
                 }
@@ -82,13 +91,13 @@ fun TaskDetailScreen(
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(
-                    onClick = { scope.launch { app.taskRepository.skip(d.assignment.id); onBack() } },
+                    onClick = { scope.launch { try { app.taskRepository.skip(d.assignment.id) } catch(e:Exception){}; onBack() } },
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
                 ) { Text("Skip", color = TextPrimary) }
                 
                 OutlinedButton(
-                    onClick = { scope.launch { app.taskRepository.decline(d.assignment.id); onBack() } },
+                    onClick = { scope.launch { try { app.taskRepository.decline(d.assignment.id) } catch(e:Exception){}; onBack() } },
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
                 ) { Text("Decline", color = TextPrimary) }
