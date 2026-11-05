@@ -14,9 +14,11 @@ const LocationGameSchema = new mongoose.Schema({
   },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
+  durationMinutes: { type: Number, required: true }, // NEW: Admin set duration
   rewardCardId: { type: mongoose.Schema.Types.ObjectId, ref: 'Card', required: true },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
-  status: { type: String, enum: ['upcoming', 'live', 'ended'], default: 'live' }
+  status: { type: String, enum: ['upcoming', 'live', 'ended'], default: 'upcoming' },
+  winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null } // Store winner
 }, { timestamps: true });
 
 LocationGameSchema.index({ location: '2dsphere' });
