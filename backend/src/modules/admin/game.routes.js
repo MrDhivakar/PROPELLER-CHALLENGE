@@ -17,6 +17,9 @@ router.get('/cards', asyncHandler(async (req, res) => {
 }));
 
 router.post('/cards', asyncHandler(async (req, res) => {
+  const existing = await Card.findOne({ cardId: req.body.cardId });
+  if (existing) return res.status(400).json({ success: false, error: { message: "Card ID already exists" } });
+  
   const card = await Card.create(req.body);
   res.status(201).json({ success: true, data: { card } });
 }));
@@ -33,14 +36,12 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { games } });
 }));
 
-// Get Live Participants & Locations
 router.get('/:id/live', asyncHandler(async (req, res) => {
   const participants = await GameParticipant.find({ gameId: req.params.id })
     .populate('userId', 'displayName email');
   res.json({ success: true, data: { participants } });
 }));
 
-// Declare Winner (Adds card to user)
 router.post('/:id/winner', asyncHandler(async (req, res) => {
   const { participantId } = req.body;
   
@@ -50,12 +51,10 @@ router.post('/:id/winner', asyncHandler(async (req, res) => {
   const game = await LocationGame.findById(participant.gameId);
   if (!game) return res.status(404).json({ success: false, error: { message: "Game not found" } });
 
-  // Update participant as winner
   participant.isWinner = true;
   participant.status = 'winner';
   await participant.save();
 
-  // Add reward card to user's inventory
   await UserCard.findOneAndUpdate(
     { userId: participant.userId, cardId: game.rewardCardId },
     { $inc: { quantity: 1 } },
