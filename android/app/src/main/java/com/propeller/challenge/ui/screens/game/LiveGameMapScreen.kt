@@ -19,7 +19,6 @@ import com.propeller.challenge.R
 import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
@@ -40,6 +39,7 @@ fun LiveGameMapScreen(
     var isAccepted by remember { mutableStateOf(false) }
     var showSubmitDialog by remember { mutableStateOf(false) }
     var answerText by remember { mutableStateOf("") }
+    var mapView: MapView? by remember { mutableStateOf(null) }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -50,21 +50,15 @@ fun LiveGameMapScreen(
                 try {
                     app.gameRepository.acceptGame(gameId)
                     isAccepted = true
-                } catch(e: Exception) {
-                    // Handle error
-                }
+                } catch(e: Exception) { }
             }
         }
     }
 
-    LaunchedEffect(Unit) {
-        try { MapLibre.getInstance(context, null, null) } catch(e: Exception) {}
-    }
-
-    // Timer Logic: Starts ONLY when accepted
+    // Timer Logic
     LaunchedEffect(isAccepted) {
         if (isAccepted) {
-            var seconds = 3600L // 1 hour (You can fetch this from backend)
+            var seconds = 3600L
             while (seconds > 0) {
                 val h = seconds / 3600
                 val m = (seconds % 3600) / 60
@@ -77,24 +71,40 @@ fun LiveGameMapScreen(
         }
     }
 
-    // Update Location every 10 seconds if accepted
+    // Update Location - Wrapped in try-catch to prevent crash if GPS not available
     LaunchedEffect(isAccepted) {
         if (!isAccepted) return@LaunchedEffect
-        val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
-        while (true) {
-            fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
-                if (loc != null) {
-                    scope.launch {
-                        try { app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude) } catch(e: Exception) {}
+        val fusedLocationClient = try {
+            LocationServices.getFusedLocationProviderClient(context)
+        } catch (e: Exception) { null }
+
+        if (fusedLocationClient != null) {
+            while (true) {
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                        if (loc != null) {
+                            scope.launch {
+                                try { app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude) } catch(e: Exception) {}
+                            }
+                        }
                     }
-                }
+                } catch (e: Exception) { }
+                delay(10000L)
             }
-            delay(10000L)
+        }
+    }
+
+    DisposableEffect(Unit) {
+        mapView?.onStart()
+        mapView?.onResume()
+        onDispose {
+            mapView?.onPause()
+            mapView?.onStop()
+            mapView?.onDestroy()
         }
     }
 
     Column(Modifier.fillMaxSize().background(Charcoal)) {
-        // Top Bar with Timer
         Row(
             Modifier.fillMaxWidth().padding(16.dp).background(SurfaceDark, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -107,33 +117,35 @@ fun LiveGameMapScreen(
             }
         }
 
-        // Map View (FIXED LIFECYCLE)
         AndroidView(
             modifier = Modifier.weight(1f),
             factory = { ctx ->
                 MapView(ctx).apply {
+                    mapView = this
                     onCreate(null)
-                    onStart()
-                    onResume()
                     getMapAsync { map ->
-                        val styleUrl = ctx.getString(R.string.map_style_url)
-                        map.setStyle(styleUrl) { style ->
-                            map.cameraPosition = CameraPosition.Builder()
-                                .target(LatLng(gameLat, gameLng))
-                                .zoom(15.0)
-                                .build()
-                        }
+                        try {
+                            val styleUrl = ctx.getString(R.string.map_style_url)
+                            map.setStyle(styleUrl) { _ ->
+                                val targetLat = if (gameLat == 0.0) 11.1271 else gameLat
+                                val targetLng = if (gameLng == 0.0) 78.6569 else gameLng
+                                
+                                map.cameraPosition = CameraPosition.Builder()
+                                    .target(LatLng(targetLat, targetLng))
+                                    .zoom(15.0)
+                                    .build()
+                            }
+                        } catch (e: Exception) { }
                     }
                 }
             },
-            onRelease = { mapView ->
-                mapView.onPause()
-                mapView.onStop()
-                mapView.onDestroy()
+            onRelease = { view ->
+                view.onPause()
+                view.onStop()
+                view.onDestroy()
             }
         )
 
-        // Bottom Controls
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
             if (!isAccepted) {
                 Button(
@@ -159,7 +171,6 @@ fun LiveGameMapScreen(
         }
     }
 
-    // Submit Answer Dialog
     if (showSubmitDialog) {
         AlertDialog(
             onDismissRequest = { showSubmitDialog = false },
