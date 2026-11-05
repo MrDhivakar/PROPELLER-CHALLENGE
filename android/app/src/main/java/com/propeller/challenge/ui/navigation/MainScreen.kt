@@ -35,7 +35,6 @@ fun MainScreen(app: PropellerApplication, onLoggedOut: () -> Unit) {
         ) {
             composable("home") {
                 HomeScreen(app,
-                    // UPDATED: Passing title and description with Uri.encode
                     onGameClick = { id, lat, lng, title, desc ->
                         val encodedTitle = Uri.encode(title)
                         val encodedDesc = Uri.encode(desc)
@@ -55,7 +54,6 @@ fun MainScreen(app: PropellerApplication, onLoggedOut: () -> Unit) {
                 AccountScreen(app, onBack = { navController.popBackStack() }, onDeleted = { onLoggedOut() })
             }
 
-            // UPDATED ROUTE: Accepts title and desc
             composable("game/{id}/{lat}/{lng}/{title}/{desc}", arguments = listOf(
                 navArgument("id") { type = NavType.StringType },
                 navArgument("lat") { type = NavType.StringType },
