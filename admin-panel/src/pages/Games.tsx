@@ -15,7 +15,6 @@ function LocationMarker({ position, setPosition, setAddress }: any) {
   useMapEvents({
     click(e: LeafletMouseEvent) {
       setPosition(e.latlng);
-      // Fetch Auto Address from OpenStreetMap (Free, No API Key)
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${e.latlng.lat}&lon=${e.latlng.lng}`)
         .then(res => res.json())
         .then(data => {
@@ -62,7 +61,6 @@ export function GamesPage() {
   const handleCreateGame = async () => {
     if (!position || !rewardCardId) return alert('Select location and reward card');
     
-    // FIXED TYPES: Casting coordinates to tuple
     const payload = {
       title, 
       description: desc, 
@@ -115,12 +113,33 @@ export function GamesPage() {
         {!selectedGame ? <p>Select a game from map to see live users</p> : (
           <div>
             {participants.map(p => (
-              <div key={p._id} style={{ background: '#0F141B', padding: 10, marginBottom: 5, borderRadius: 8 }}>
-                <b>{p.userId?.displayName}</b> ({p.status})
-                {!p.isWinner && p.status !== 'winner' && (
-                  <button style={{ marginLeft: 10, padding: '2px 8px' }} onClick={() => declareWinner(selectedGame, p._id)}>Mark Winner</button>
+              <div key={p._id} style={{ background: '#0F141B', padding: 15, marginBottom: 10, borderRadius: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <b style={{ color: '#F9FAFB' }}>{p.userId?.displayName}</b> 
+                    <span style={{ color: '#9CA3AF', fontSize: 12, marginLeft: 8 }}>({p.status})</span>
+                  </div>
+                  
+                  {!p.isWinner && p.status !== 'winner' && (
+                    <button 
+                      style={{ padding: '4px 12px', background: '#4F46E5', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }} 
+                      onClick={() => declareWinner(selectedGame, p._id)}
+                    >
+                      Mark Winner
+                    </button>
+                  )}
+                  {p.isWinner && <span style={{ color: '#F59E0B', fontWeight: 'bold' }}>🏆 WINNER</span>}
+                </div>
+
+                {/* NEW: Display User's Submitted Answer */}
+                {p.submittedAnswer && (
+                  <div style={{ marginTop: 12, padding: 10, background: '#1F2937', borderRadius: 6, borderLeft: '3px solid #06B6D4' }}>
+                    <span style={{ fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1 }}>Submitted Answer:</span>
+                    <p style={{ margin: '4px 0 0 0', color: '#F9FAFB', fontSize: 14, wordBreak: 'break-word' }}>
+                      {p.submittedAnswer}
+                    </p>
+                  </div>
                 )}
-                {p.isWinner && <span style={{ color: 'gold', marginLeft: 10 }}>🏆 WINNER</span>}
               </div>
             ))}
           </div>
