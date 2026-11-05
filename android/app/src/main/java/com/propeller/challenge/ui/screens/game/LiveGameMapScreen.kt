@@ -18,7 +18,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.location.LocationServices
 import com.propeller.challenge.PropellerApplication
 import com.propeller.challenge.R
-import com.propeller.challenge.data.repository.ApiResult
 import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -46,7 +45,6 @@ fun LiveGameMapScreen(
     var showSubmitDialog by remember { mutableStateOf(false) }
     var answerText by remember { mutableStateOf("") }
     var mapView: MapView? by remember { mutableStateOf(null) }
-    var livePlayers by remember { mutableStateOf<List<Any>>(emptyList()) } // Simplified
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -71,17 +69,25 @@ fun LiveGameMapScreen(
         }
     }
 
-    // Poll Live Players
+    // Update Location
     LaunchedEffect(isAccepted) {
         if (!isAccepted) return@LaunchedEffect
-        while (true) {
-            // Mocking or fetching live players from backend
-            delay(10000L)
+        val fusedLocationClient = try { LocationServices.getFusedLocationProviderClient(context) } catch (e: Exception) { null }
+        if (fusedLocationClient != null) {
+            while (true) {
+                try {
+                    fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                        if (loc != null) {
+                            scope.launch { try { app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude) } catch(e: Exception) {} }
+                        }
+                    }
+                } catch (e: Exception) { }
+                delay(10000L)
+            }
         }
     }
 
     Column(Modifier.fillMaxSize().background(Charcoal)) {
-        // Top Bar with Timer
         Row(
             Modifier.fillMaxWidth().padding(16.dp).background(SurfaceDark, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)).padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -121,7 +127,6 @@ fun LiveGameMapScreen(
                                     .target(LatLng(gameLat, gameLng))
                                     .zoom(15.0)
                                     .build()
-                                // Admin Pin
                                 map.addMarker(MarkerOptions().position(LatLng(gameLat, gameLng)).title(gameTitle))
                             }
                         } catch (e: Exception) { }
