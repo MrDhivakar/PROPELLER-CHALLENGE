@@ -1,6 +1,5 @@
 package com.propeller.challenge.ui.screens.cards
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -11,9 +10,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.decode.SvgDecoder
+import coil.request.ImageRequest
 import com.propeller.challenge.PropellerApplication
 import com.propeller.challenge.data.remote.dto.UserCardDto
 import com.propeller.challenge.data.repository.ApiResult
@@ -75,25 +78,16 @@ fun MyCardsScreen(app: PropellerApplication, onBack: () -> Unit) {
                         ) {
                             Text("Lvl ${card.level}", color = AgedMetal, fontWeight = FontWeight.Bold)
                             
-                            // Direct Local Image loading based on Level
-                            val imageResId = androidx.compose.ui.platform.LocalContext.current.resources.getIdentifier(
-                                "card_${card.level}", "drawable", androidx.compose.ui.platform.LocalContext.current.packageName
+                            // NEW: Render SVG from Base64 Data URI
+                            AsyncImage(
+                                model = ImageRequest.Builder(LocalContext.current)
+                                    .data(card.imageUrl)
+                                    .decoderFactory(SvgDecoder.Factory())
+                                    .build(),
+                                contentDescription = card.name,
+                                modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 8.dp),
+                                contentScale = ContentScale.Fit
                             )
-                            
-                            if (imageResId != 0) {
-                                Image(
-                                    painter = painterResource(id = imageResId),
-                                    contentDescription = card.name,
-                                    modifier = Modifier.size(80.dp)
-                                )
-                            } else {
-                                // Fallback logo
-                                Image(
-                                    painter = painterResource(id = com.propeller.challenge.R.drawable.propeller_logo),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(60.dp)
-                                )
-                            }
                             
                             Text(card.name, color = TextPrimary, maxLines = 1)
                             Text("Qty: ${userCard.quantity}", color = OceanLight, fontWeight = FontWeight.Bold)
