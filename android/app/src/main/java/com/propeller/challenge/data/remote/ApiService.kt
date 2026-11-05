@@ -42,17 +42,26 @@ interface ApiService {
     @POST("reports")
     suspend fun report(@Body b: ReportRequest): Response<ApiEnvelope<ReportResponse>>
 
-    // NEW GAME ENDPOINTS
+    // GAME ENDPOINTS
     @GET("games")
     suspend fun getGames(): Response<ApiEnvelope<GamesResponse>>
+    
     @POST("games/{id}/accept")
     suspend fun acceptGame(@Path("id") id: String): Response<ApiEnvelope<AcceptGameResponse>>
+    
     @POST("games/{id}/location")
     suspend fun updateGameLocation(@Path("id") id: String, @Body b: Map<String, Double>): Response<ApiEnvelope<Any>>
+    
+    // NEW: Get live players
+    @GET("games/{id}/live-players")
+    suspend fun getLivePlayers(@Path("id") id: String): Response<ApiEnvelope<Map<String, List<Any>>>>
+    
     @POST("games/{id}/submit")
     suspend fun submitGameAnswer(@Path("id") id: String, @Body b: Map<String, String>): Response<ApiEnvelope<Any>>
+    
     @GET("games/my-cards")
     suspend fun myCards(): Response<ApiEnvelope<MyCardsResponse>>
+    
     @POST("games/claim-card")
     suspend fun claimCard(@Body b: Map<String, String>): Response<ApiEnvelope<Any>>
 }
