@@ -24,24 +24,33 @@ object Routes {
 fun PropellerNavHost(app: PropellerApplication) {
     val nav = rememberNavController()
     NavHost(navController = nav, startDestination = Routes.Splash) {
+        
         composable(Routes.Splash) {
-            SplashScreen(app) { nav.navigate(Routes.Onboarding) { popUpTo(Routes.Splash) { inclusive = true } } }
+            SplashScreen(app,
+                onLoggedIn = { nav.navigate(Routes.Main) { popUpTo(Routes.Splash) { inclusive = true } } },
+                onNotLoggedIn = { nav.navigate(Routes.Onboarding) { popUpTo(Routes.Splash) { inclusive = true } } }
+            )
         }
+
         composable(Routes.Onboarding) {
             OnboardingScreen(app) { nav.navigate(Routes.Login) { popUpTo(Routes.Onboarding) { inclusive = true } } }
         }
+        
         composable(Routes.Login) {
             LoginScreen(app,
                 onSuccess = { nav.navigate(Routes.Main) { popUpTo(Routes.Login) { inclusive = true } } },
                 onRegister = { nav.navigate(Routes.Register) },
                 onForgot = { nav.navigate(Routes.Forgot) })
         }
+        
         composable(Routes.Register) {
             RegisterScreen(app,
                 onSuccess = { nav.navigate(Routes.Main) { popUpTo(Routes.Login) { inclusive = true } } },
                 onBack = { nav.popBackStack() })
         }
+        
         composable(Routes.Forgot) { ForgotPasswordScreen(app, onBack = { nav.popBackStack() }) }
+        
         composable(Routes.Main) {
             MainScreen(app, onLoggedOut = { nav.navigate(Routes.Login) { popUpTo(Routes.Main) { inclusive = true } } })
         }
