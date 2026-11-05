@@ -5,12 +5,10 @@ import { LocationGame } from '../../models/LocationGame.js';
 import { GameParticipant } from '../../models/GameParticipant.js';
 import { UserCard } from '../../models/UserCard.js';
 import { Card } from '../../models/Card.js';
-import { logAdminActivity } from '../../services/activityLog.js';
 
 const router = Router();
 router.use(authenticateAdmin);
 
-// --- CARDS MANAGEMENT ---
 router.get('/cards', asyncHandler(async (req, res) => {
   const cards = await Card.find().sort({ level: 1 });
   res.json({ success: true, data: { cards } });
@@ -23,10 +21,17 @@ router.post('/cards', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data: { card } });
 }));
 
-// --- GAMES MANAGEMENT ---
 router.post('/', asyncHandler(async (req, res) => {
-  const game = await LocationGame.create({ ...req.body, createdBy: req.admin._id, status: 'live' });
-  await logAdminActivity({ adminId: req.admin._id, action: 'game.create', targetId: game._id });
+  const { durationMinutes, startTime } = req.body;
+  // Auto Calculate End Time based on duration
+  const endTime = new Date(new Date(startTime).getTime() + durationMinutes * 60000);
+  
+  const game = await LocationGame.create({ 
+    ...req.body, 
+    endTime, 
+    createdBy: req.admin._id,
+    status: new Date(startTime) > new Date() ? 'upcoming' : 'live'
+  });
   res.status(201).json({ success: true, data: { game } });
 }));
 
@@ -35,34 +40,35 @@ router.get('/', asyncHandler(async (req, res) => {
   res.json({ success: true, data: { games } });
 }));
 
-// Get Live Participants & Locations
 router.get('/:id/live', asyncHandler(async (req, res) => {
   const participants = await GameParticipant.find({ gameId: req.params.id })
     .populate('userId', 'displayName email');
   res.json({ success: true, data: { participants } });
 }));
 
-// Declare Winner (Adds card to user)
+// Declare Winner
 router.post('/:id/winner', asyncHandler(async (req, res) => {
   const { participantId } = req.body;
   const participant = await GameParticipant.findById(participantId);
-  if (!participant) return res.status(404).json({ success: false, error: { message: "Participant not found" } });
-
   const game = await LocationGame.findById(participant.gameId);
-  if (!game) return res.status(404).json({ success: false, error: { message: "Game not found" } });
 
   participant.isWinner = true;
   participant.status = 'winner';
   await participant.save();
 
-  // Add reward card to user's inventory
+  // Save winner to game and end it
+  game.winnerId = participant.userId;
+  game.status = 'ended';
+  await game.save();
+
+  // Give Card
   await UserCard.findOneAndUpdate(
     { userId: participant.userId, cardId: game.rewardCardId },
     { $inc: { quantity: 1 } },
     { upsert: true, new: true }
   );
 
-  res.json({ success: true, data: { message: "Winner declared and card added!" } });
+  res.json({ success: true, data: { message: "Winner declared!" } });
 }));
 
 export default router;
