@@ -3,6 +3,7 @@ import healthRoutes from '../modules/health/health.routes.js';
 import authRoutes from '../modules/auth/auth.routes.js';
 import adminAuthRoutes from '../modules/admin/auth/adminAuth.routes.js';
 import userRoutes from '../modules/user/user.routes.js';
+import userGameRoutes from '../modules/user/game.routes.js'; // NEW
 import taskRoutes from '../modules/task/task.routes.js';
 import assignmentRoutes from '../modules/assignment/assignment.routes.js';
 import submissionRoutes from '../modules/submission/submission.routes.js';
@@ -13,7 +14,7 @@ import adminTasksRoutes from '../modules/admin/tasks.routes.js';
 import adminSubmissionsRoutes from '../modules/admin/submissions.routes.js';
 import adminReportsRoutes from '../modules/admin/reports.routes.js';
 import adminLogsRoutes from '../modules/admin/logs.routes.js';
-import adminGameRoutes from '../modules/admin/game.routes.js'; // NEW IMPORT
+import adminGameRoutes from '../modules/admin/game.routes.js';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/admin/auth', adminAuthRoutes);
 router.use('/me', userRoutes);
+router.use('/games', userGameRoutes); // NEW
 router.use('/tasks', taskRoutes);
 router.use('/assignments', assignmentRoutes);
 router.use('/submissions', submissionRoutes);
@@ -31,6 +33,6 @@ router.use('/admin/tasks', adminTasksRoutes);
 router.use('/admin/submissions', adminSubmissionsRoutes);
 router.use('/admin/reports', adminReportsRoutes);
 router.use('/admin/logs', adminLogsRoutes);
-router.use('/admin/games', adminGameRoutes); // NEW ROUTE
+router.use('/admin/games', adminGameRoutes);
 
 export default router;
