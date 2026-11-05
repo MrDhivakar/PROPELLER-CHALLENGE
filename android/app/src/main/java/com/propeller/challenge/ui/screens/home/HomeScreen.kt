@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -28,14 +27,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     app: PropellerApplication,
-    onGameClick: (id: String, lat: Double, lng: Double) -> Unit,
+    onGameClick: (id: String, lat: Double, lng: Double, title: String, desc: String) -> Unit, // 5 Params
     onHistory: () -> Unit, onSettings: () -> Unit, onLoggedOut: () -> Unit
 ) {
     var games by remember { mutableStateOf<List<LocationGameDto>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     // Video Background Setup
@@ -122,7 +120,9 @@ fun HomeScreen(
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = SurfaceDark.copy(alpha = 0.9f)),
-                        modifier = Modifier.fillMaxWidth().clickable { onGameClick(game._id, lat, lng) }
+                        modifier = Modifier.fillMaxWidth().clickable { 
+                            onGameClick(game._id, lat, lng, game.title, game.description) // Passing 5 params
+                        }
                     ) {
                         Column(Modifier.padding(16.dp)) {
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -130,7 +130,7 @@ fun HomeScreen(
                                 Text("ACTIVE", color = AgedMetal, style = MaterialTheme.typography.labelLarge)
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text("${game.address?.district}, ${game.address?.country}", color = OceanLight, style = MaterialTheme.typography.bodySmall)
+                            Text("${game.address?.district ?: "Unknown"}, ${game.address?.country ?: "Unknown"}", color = OceanLight, style = MaterialTheme.typography.bodySmall)
                             Spacer(Modifier.height(8.dp))
                             Text(game.description, color = TextMuted, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
                         }
