@@ -16,7 +16,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.location.LocationServices
 import com.propeller.challenge.PropellerApplication
 import com.propeller.challenge.R
-import com.propeller.challenge.data.repository.ApiResult
 import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -24,8 +23,6 @@ import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
-import java.text.SimpleDateFormat
-import java.util.*
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -124,7 +121,9 @@ fun LiveGameMapScreen(
                     mapView = this
                     onCreate(null)
                     getMapAsync { map ->
-                        map.setStyle(R.string.map_style_url) {
+                        // FIX IS HERE: Using ctx.getString to get the actual URL String
+                        val styleUrl = ctx.getString(R.string.map_style_url)
+                        map.setStyle(styleUrl) { style ->
                             map.cameraPosition = CameraPosition.Builder()
                                 .target(LatLng(gameLat, gameLng))
                                 .zoom(15.0)
