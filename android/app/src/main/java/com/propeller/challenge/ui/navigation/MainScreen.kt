@@ -35,10 +35,11 @@ fun MainScreen(app: PropellerApplication, onLoggedOut: () -> Unit) {
         ) {
             composable("home") {
                 HomeScreen(app,
-                    onGameClick = { id, lat, lng, title, desc ->
+                    // Passing 6 parameters now including duration
+                    onGameClick = { id, lat, lng, title, desc, duration ->
                         val encodedTitle = Uri.encode(title)
                         val encodedDesc = Uri.encode(desc)
-                        navController.navigate("game/$id/$lat/$lng/$encodedTitle/$encodedDesc")
+                        navController.navigate("game/$id/$lat/$lng/$encodedTitle/$encodedDesc/$duration")
                     },
                     onHistory = { navController.navigate("history") },
                     onSettings = { navController.navigate("settings") },
@@ -54,20 +55,23 @@ fun MainScreen(app: PropellerApplication, onLoggedOut: () -> Unit) {
                 AccountScreen(app, onBack = { navController.popBackStack() }, onDeleted = { onLoggedOut() })
             }
 
-            composable("game/{id}/{lat}/{lng}/{title}/{desc}", arguments = listOf(
+            // UPDATED ROUTE: Added /{duration} at the end
+            composable("game/{id}/{lat}/{lng}/{title}/{desc}/{duration}", arguments = listOf(
                 navArgument("id") { type = NavType.StringType },
                 navArgument("lat") { type = NavType.StringType },
                 navArgument("lng") { type = NavType.StringType },
                 navArgument("title") { type = NavType.StringType },
-                navArgument("desc") { type = NavType.StringType }
+                navArgument("desc") { type = NavType.StringType },
+                navArgument("duration") { type = NavType.IntType } // <-- ADDED
             )) { e ->
                 val id = e.arguments?.getString("id").orEmpty()
                 val lat = e.arguments?.getString("lat")?.toDoubleOrNull() ?: 0.0
                 val lng = e.arguments?.getString("lng")?.toDoubleOrNull() ?: 0.0
                 val title = e.arguments?.getString("title").orEmpty()
                 val desc = e.arguments?.getString("desc").orEmpty()
+                val duration = e.arguments?.getInt("duration") ?: 60 // Default 60 mins
                 
-                LiveGameMapScreen(app, id, lat, lng, title, desc, onBack = { navController.popBackStack() })
+                LiveGameMapScreen(app, id, lat, lng, title, desc, duration, onBack = { navController.popBackStack() })
             }
         }
     }
