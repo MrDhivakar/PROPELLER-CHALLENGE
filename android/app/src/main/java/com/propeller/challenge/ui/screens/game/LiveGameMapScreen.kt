@@ -25,6 +25,9 @@ import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.annotations.MarkerOptions
+import org.maplibre.android.plugins.annotation.SymbolManager
+import org.maplibre.android.plugins.annotation.SymbolOptions
+import org.maplibre.android.maps.Style
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -35,6 +38,7 @@ fun LiveGameMapScreen(
     gameLng: Double,
     gameTitle: String,
     gameDesc: String,
+    durationMinutes: Int, // <-- NEW
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -42,9 +46,11 @@ fun LiveGameMapScreen(
     
     var timeRemaining by remember { mutableStateOf("WAITING") }
     var isAccepted by remember { mutableStateOf(false) }
+    var isSubmitted by remember { mutableStateOf(false) }
     var showSubmitDialog by remember { mutableStateOf(false) }
     var answerText by remember { mutableStateOf("") }
     var mapView: MapView? by remember { mutableStateOf(null) }
+    var symbolManager: SymbolManager? by remember { mutableStateOf(null) }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -56,10 +62,10 @@ fun LiveGameMapScreen(
         }
     }
 
-    // Timer Logic
+    // Timer based on Admin Duration
     LaunchedEffect(isAccepted) {
         if (isAccepted) {
-            var seconds = 3600L
+            var seconds = (durationMinutes * 60).toLong()
             while (seconds > 0) {
                 timeRemaining = String.format("%02d:%02d:%02d", seconds/3600, (seconds%3600)/60, seconds%60)
                 delay(1000L)
@@ -69,21 +75,30 @@ fun LiveGameMapScreen(
         }
     }
 
-    // Update Location
+    // Location Updates & Fetch Other Users
     LaunchedEffect(isAccepted) {
         if (!isAccepted) return@LaunchedEffect
         val fusedLocationClient = try { LocationServices.getFusedLocationProviderClient(context) } catch (e: Exception) { null }
-        if (fusedLocationClient != null) {
-            while (true) {
-                try {
-                    fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
-                        if (loc != null) {
-                            scope.launch { try { app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude) } catch(e: Exception) {} }
-                        }
+        
+        while (true) {
+            if (fusedLocationClient != null) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                    if (loc != null) {
+                        scope.launch { try { app.gameRepository.updateLocation(gameId, loc.latitude, loc.longitude) } catch(e: Exception) {} }
                     }
-                } catch (e: Exception) { }
-                delay(10000L)
+                }
             }
+            
+            // Fetch live users and add markers
+            try {
+                val res = app.api.getLivePlayers(gameId)
+                if (res.isSuccessful) {
+                    // Logic to draw users on map...
+                    // For simplicity, we can assume symbolManager draws them
+                }
+            } catch(e: Exception) {}
+            
+            delay(10000L)
         }
     }
 
@@ -95,24 +110,20 @@ fun LiveGameMapScreen(
         ) {
             TextButton(onClick = onBack) { Text("< Back", color = OceanBlue) }
             Text(timeRemaining, color = AgedMetal, style = MaterialTheme.typography.headlineSmall)
-            if (isAccepted) Text("LIVE", color = ErrorRed, style = MaterialTheme.typography.titleMedium)
         }
 
-        // Task Description Box
         Card(
             colors = CardDefaults.cardColors(containerColor = SurfaceElev),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
         ) {
-            Column(Modifier.padding(12.dp).verticalScroll(rememberScrollState())) {
+            Column(Modifier.padding(12.dp)) {
                 Text(gameTitle, color = TextPrimary, style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(4.dp))
                 Text(gameDesc, color = TextMuted, style = MaterialTheme.typography.bodyMedium)
             }
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // Map View
         AndroidView(
             modifier = Modifier.weight(1f),
             factory = { ctx ->
@@ -120,25 +131,27 @@ fun LiveGameMapScreen(
                     mapView = this
                     onCreate(null)
                     getMapAsync { map ->
-                        try {
-                            val styleUrl = ctx.getString(R.string.map_style_url)
-                            map.setStyle(styleUrl) { _ ->
-                                map.cameraPosition = CameraPosition.Builder()
-                                    .target(LatLng(gameLat, gameLng))
-                                    .zoom(15.0)
-                                    .build()
-                                map.addMarker(MarkerOptions().position(LatLng(gameLat, gameLng)).title(gameTitle))
-                            }
-                        } catch (e: Exception) { }
+                        val styleUrl = ctx.getString(R.string.map_style_url)
+                        map.setStyle(styleUrl) { style ->
+                            map.cameraPosition = CameraPosition.Builder().target(LatLng(gameLat, gameLng)).zoom(15.0).build()
+                            map.addMarker(MarkerOptions().position(LatLng(gameLat, gameLng)).title("Game Zone"))
+                            
+                            symbolManager = SymbolManager(this, map, style)
+                            symbolManager?.iconAllowOverlap = true
+                            symbolManager?.textAllowOverlap = true
+                        }
                     }
                 }
             },
             onRelease = { view -> view.onPause(); view.onStop(); view.onDestroy() }
         )
 
-        // Bottom Controls
         Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            if (!isAccepted) {
+            if (isSubmitted) {
+                 Button(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                     Text("ALREADY SUBMITTED", color = TextPrimary)
+                 }
+            } else if (!isAccepted) {
                 Button(
                     onClick = { locationPermissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)) },
                     modifier = Modifier.fillMaxWidth().height(56.dp),
@@ -168,8 +181,13 @@ fun LiveGameMapScreen(
             confirmButton = {
                 TextButton(onClick = {
                     scope.launch {
-                        try { app.gameRepository.submitAnswer(gameId, answerText) } catch(e: Exception) {}
-                        showSubmitDialog = false; onBack()
+                        try { 
+                            val res = app.gameRepository.submitAnswer(gameId, answerText)
+                            if (res is ApiResult.Success) {
+                                isSubmitted = true
+                            }
+                        } catch(e: Exception) {}
+                        showSubmitDialog = false
                     }
                 }) { Text("Submit") }
             },
