@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
 fun HomeScreen(
     app: PropellerApplication,
     onTaskClick: (id: String) -> Unit,
-    onGameClick: (id: String, lat: Double, lng: Double) -> Unit, // NEW
+    onGameClick: (id: String, lat: Double, lng: Double) -> Unit,
     onHistory: () -> Unit, onProfile: () -> Unit, onSettings: () -> Unit, onCards: () -> Unit, onLoggedOut: () -> Unit
 ) {
     var assignments by remember { mutableStateOf<List<AssignmentDto>>(emptyList()) }
@@ -63,7 +63,7 @@ fun HomeScreen(
             return@Column
         }
 
-        // NEW: Location Games Section
+        // Location Games
         if (games.isNotEmpty()) {
             Text("Live Location Games", color = OceanLight, style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(8.dp))
@@ -86,7 +86,7 @@ fun HomeScreen(
             Spacer(Modifier.height(16.dp))
         }
 
-        // Daily Tasks Section
+        // Daily Tasks
         Text("Today's Tasks", color = TextMuted, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         
