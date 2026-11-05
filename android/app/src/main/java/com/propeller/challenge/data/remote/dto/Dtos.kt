@@ -48,10 +48,13 @@ data class SimpleOk(val ok: Boolean? = null)
 
 // NEW MODELS FOR GAMES & CARDS
 data class CardDto(val _id: String, val name: String, val level: Int, val imageUrl: String)
+data class GameAddressDto(val country: String?, val state: String?, val district: String?)
+
 data class LocationGameDto(
     val _id: String, val title: String, val description: String,
     val location: GeoJsonPoint, val startTime: String, val endTime: String,
-    val rewardCardId: CardDto?, val status: String
+    val rewardCardId: CardDto?, val status: String,
+    val address: GameAddressDto? = null // <-- Added Address
 )
 data class GeoJsonPoint(val type: String, val coordinates: List<Double>) // [lng, lat]
 
