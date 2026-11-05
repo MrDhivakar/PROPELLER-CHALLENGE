@@ -18,6 +18,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.google.android.gms.location.LocationServices
 import com.propeller.challenge.PropellerApplication
 import com.propeller.challenge.R
+import com.propeller.challenge.data.repository.ApiResult // <-- FIXED IMPORT
 import com.propeller.challenge.ui.theme.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -25,9 +26,7 @@ import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.annotations.MarkerOptions
-import org.maplibre.android.plugins.annotation.SymbolManager
-import org.maplibre.android.plugins.annotation.SymbolOptions
-import org.maplibre.android.maps.Style
+import org.maplibre.android.maps.MapLibreMap
 
 @SuppressLint("MissingPermission")
 @Composable
@@ -38,7 +37,7 @@ fun LiveGameMapScreen(
     gameLng: Double,
     gameTitle: String,
     gameDesc: String,
-    durationMinutes: Int, // <-- NEW
+    durationMinutes: Int,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -50,7 +49,7 @@ fun LiveGameMapScreen(
     var showSubmitDialog by remember { mutableStateOf(false) }
     var answerText by remember { mutableStateOf("") }
     var mapView: MapView? by remember { mutableStateOf(null) }
-    var symbolManager: SymbolManager? by remember { mutableStateOf(null) }
+    var mapLibreMap: MapLibreMap? by remember { mutableStateOf(null) }
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -89,12 +88,18 @@ fun LiveGameMapScreen(
                 }
             }
             
-            // Fetch live users and add markers
+            // Fetch live users and add markers (Simplified for demo)
             try {
-                val res = app.api.getLivePlayers(gameId)
-                if (res.isSuccessful) {
-                    // Logic to draw users on map...
-                    // For simplicity, we can assume symbolManager draws them
+                val res = app.gameRepository.getLivePlayers(gameId) // <-- FIXED CALL
+                if (res is ApiResult.Success) {
+                    // Clear previous markers and draw new ones
+                    mapLibreMap?.clear()
+                    // Draw admin game pin
+                    mapLibreMap?.addMarker(MarkerOptions().position(LatLng(gameLat, gameLng)).title("Game Zone"))
+                    
+                    // Draw users
+                    // Note: Backend currently returns a Map<String, List<Any>>, we would need proper DTO
+                    // To keep this compiling safely, we rely on the camera position update below.
                 }
             } catch(e: Exception) {}
             
@@ -116,7 +121,7 @@ fun LiveGameMapScreen(
             colors = CardDefaults.cardColors(containerColor = SurfaceElev),
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
         ) {
-            Column(Modifier.padding(12.dp)) {
+            Column(Modifier.padding(12.dp).verticalScroll(rememberScrollState())) {
                 Text(gameTitle, color = TextPrimary, style = MaterialTheme.typography.titleLarge)
                 Text(gameDesc, color = TextMuted, style = MaterialTheme.typography.bodyMedium)
             }
@@ -131,14 +136,11 @@ fun LiveGameMapScreen(
                     mapView = this
                     onCreate(null)
                     getMapAsync { map ->
+                        mapLibreMap = map
                         val styleUrl = ctx.getString(R.string.map_style_url)
-                        map.setStyle(styleUrl) { style ->
+                        map.setStyle(styleUrl) { _ ->
                             map.cameraPosition = CameraPosition.Builder().target(LatLng(gameLat, gameLng)).zoom(15.0).build()
                             map.addMarker(MarkerOptions().position(LatLng(gameLat, gameLng)).title("Game Zone"))
-                            
-                            symbolManager = SymbolManager(this, map, style)
-                            symbolManager?.iconAllowOverlap = true
-                            symbolManager?.textAllowOverlap = true
                         }
                     }
                 }
